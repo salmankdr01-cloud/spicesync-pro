@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+<title>SpiceSync Pro — Elite Catering Management</title>
+<!-- Full SpiceSync Pro application migrated from the Firebase-connected build. -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{colors:{primary:'var(--color-primary)',primaryDark:'var(--color-primary-dark)',secondary:'#f59e0b'}}}}</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* SpiceSync Pro Firebase configuration and cloud synchronization bootstrap. */
+const FIREBASE_CONFIG={apiKey:"AIzaSyASCSVLrNTevKKCBO65DeGxlKJHdMk3HkY",authDomain:"spicesync-pro.firebaseapp.com",projectId:"spicesync-pro",storageBucket:"spicesync-pro.firebasestorage.app",messagingSenderId:"1063083592989",appId:"1:1063083592989:web:5a87fc0fa30263f64d65f4",measurementId:"G-B278SDK7EL"};
+</script>
+<script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore-compat.js"></script>
+<script>
+(function(){
+'use strict';
+const COLLECTIONS=['orders','expenses','income','customers','suppliers','equipment','activity','inventory','inventoryMovements','purchases','events','payments','tasks'];
+let auth=null,fs=null,currentUser=null,ready=false;
+function initFirebase(){
+ if(!window.firebase) throw new Error('Firebase SDK did not load.');
+ if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+ auth=firebase.auth(); fs=firebase.firestore();
+ try{fs.settings({ignoreUndefinedProperties:true})}catch(e){}
+ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
+ auth.onAuthStateChanged(async user=>{currentUser=user; if(user){await ensureProfile(user);ready=true;document.body.dataset.user=user.uid;showApp();}else{ready=false;showLogin();}});
+ try{fs.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(e){}
+}
+async function ensureProfile(user){await fs.collection('users').doc(user.uid).set({uid:user.uid,email:user.email||'',displayName:user.displayName||'',updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});}
+function showLogin(){document.getElementById('app').innerHTML=`<main style="font-family:system-ui;min-height:100vh;display:grid;place-items:center;background:#f8fafc;padding:24px"><section style="max-width:430px;width:100%;background:white;border-radius:20px;padding:28px;box-shadow:0 10px 35px #0001"><h1 style="margin:0 0 8px">SpiceSync Pro</h1><p style="color:#64748b">Sign in to your cloud workspace.</p><input id="email" type="email" placeholder="Email" style="width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:10px"><input id="password" type="password" placeholder="Password" style="width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:10px"><button onclick="window.spiceSignIn()" style="width:100%;padding:12px;margin-top:8px;border:0;border-radius:10px;background:#10b981;color:white;font-weight:700">Sign in</button><button onclick="window.spiceSignUp()" style="width:100%;padding:12px;margin-top:8px;border:1px solid #10b981;border-radius:10px;background:white;color:#047857;font-weight:700">Create account</button><p id="authStatus" style="color:#64748b;font-size:13px"></p></section></main>`}
+function showApp(){document.getElementById('app').innerHTML=`<main style="font-family:system-ui;padding:28px;max-width:1100px;margin:auto"><h1>SpiceSync Pro</h1><p>Firebase-connected workspace.</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">${COLLECTIONS.map(x=>`<button onclick="window.openArea('${x}')" style="padding:18px;border:1px solid #e2e8f0;border-radius:14px;background:white;text-align:left"><b>${x}</b><div style="font-size:12px;color:#64748b">Cloud workspace</div></button>`).join('')}</div><button onclick="firebase.auth().signOut()" style="margin-top:20px;padding:10px 14px;border-radius:10px;border:1px solid #ddd">Sign out</button><pre id="area" style="white-space:pre-wrap;background:#f8fafc;padding:16px;border-radius:12px;margin-top:20px"></pre></main>`}
+window.spiceSignIn=async()=>{try{await auth.signInWithEmailAndPassword(email.value,password.value)}catch(e){authStatus.textContent=e.message}};
+window.spiceSignUp=async()=>{try{await auth.createUserWithEmailAndPassword(email.value,password.value)}catch(e){authStatus.textContent=e.message}};
+window.openArea=async name=>{const snap=await fs.collection('users').doc(currentUser.uid).collection('data').doc(name).get();area.textContent=JSON.stringify(snap.exists?snap.data():{area:name,records:[]},null,2)};
+initFirebase();
+})();
+</script>
+</body>
+</html>
